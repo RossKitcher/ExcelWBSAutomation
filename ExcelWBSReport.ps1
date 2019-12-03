@@ -1,13 +1,14 @@
 ﻿
 function generateMainForm {
+    [System.Windows.Forms.Application]::EnableVisualStyles()
     # Create main form
     $main_form = New-Object System.Windows.Forms.Form
-    [System.Windows.Forms.Application]::EnableVisualStyles()
+    
 
     $main_form.Text = 'BAE AHR BHR Report'
     $main_form.Width = 822
     $main_form.Height = 506
-    $main_form.AutoSize = $false
+    $main_form.AutoSize = $true
     $main_form.MaximizeBox = $false
     $main_form.MinimizeBox = $true
     $main_form.FormBorderStyle = 'FixedDialog'
@@ -423,7 +424,7 @@ function mainReportGeneration {
 
         #Init worksheets
         $wsWBSCodes = $WBSsheets.Item(1)
-        $wsBAEReport = $BAEsheets.Item(4)
+        $wsBAEReport = $BAEsheets.Item((findCorrectSheet))
 
         #Get cells
         $WBSCells = $wsWBSCodes.Cells
@@ -439,6 +440,8 @@ function mainReportGeneration {
         #Add new column
         addColumn($WBSCells)
         
+        
+
         $progress.Value = 55
         #For each PO in the sheet
         For ($row = 2; $row -le (getLastUsedRow($wsWBSCodes)); $row++) {
@@ -522,6 +525,22 @@ function hideConsoleWindow {
     $consolePtr = [Console.Window]::GetConsoleWindow()
     [Console.Window]::ShowWindow($consolePtr, 0)
 
+}
+
+function findCorrectSheet {
+    foreach ($singleSheet in $BAESheets) {
+
+        ### COLUMNS MAY GET ADDED/REMOVED CHANGE CONDITION BELOW IF THIS IS THE CASE
+
+        $sheetCells = $singleSheet.Cells
+        try {
+            if ($sheetCells.Item('1', 'BA').Value2 -eq 'Remaining Spend' -or $sheetCells.Item('1', 'BB').Value2 -eq 'Remaining Spend' -and $singleSheet.Name -ne '£1 Rates') {
+                return $singleSheet.Name
+            }
+        } catch {
+            continue
+        }
+    }
 }
 
 ###
