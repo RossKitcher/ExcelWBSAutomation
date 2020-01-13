@@ -424,7 +424,9 @@ function mainReportGeneration {
 
         #Init worksheets
         $wsWBSCodes = $WBSsheets.Item(1)
-        $wsBAEReport = $BAEsheets.Item((findCorrectSheet))
+
+        $sheetNum, $remainingSpendLocation = findCorrectSheet
+        $wsBAEReport = $BAEsheets.Item($sheetNum)
 
         #Get cells
         $WBSCells = $wsWBSCodes.Cells
@@ -455,7 +457,7 @@ function mainReportGeneration {
                 #While the remaining to spend value is not found
                 while (!$isValueFound) {
                     
-                    $valueSpent = $BAECells.Item($foundRow, "BA").Value2 #get contents of cell
+                    $valueSpent = $BAECells.Item($foundRow, $remainingSpendLocation).Value2 #get contents of cell
             
                     #if empty, increment row
                     if ([string]::IsNullOrEmpty($valueSpent)) {
@@ -467,7 +469,7 @@ function mainReportGeneration {
                         $progress.Value = 75
                         #Create cell reference
                         $tempFromReference = ''
-                        $tempFromReference += "BA"
+                        $tempFromReference += $remainingSpendLocation
                         $tempFromReference += $foundRow
 
                         #Create another cell reference
@@ -533,13 +535,36 @@ function findCorrectSheet {
         ### COLUMNS MAY GET ADDED/REMOVED CHANGE CONDITION BELOW IF THIS IS THE CASE
 
         $sheetCells = $singleSheet.Cells
-        try {
-            if ($sheetCells.Item('1', 'BA').Value2 -eq 'Remaining Spend' -or $sheetCells.Item('1', 'BB').Value2 -eq 'Remaining Spend' -and $singleSheet.Name -ne '£1 Rates') {
-                return $singleSheet.Name
-            }
-        } catch {
+
+        if ($singleSheet.Name -eq '£1 Rates' -or $singleSheet.Name -eq 'Guidance') {
             continue
         }
+
+        $i = 1
+
+        while ($true) {
+            $colName = convertColIndexToName($i)
+
+            if ($sheetCells.Item('1', $colName).Value2 -eq '') {
+                break
+            }
+
+            if ($sheetCells.Item('1', $colName).Value2 -eq 'Remaining Spend') {
+                Write-Host $singleSheet.Name, $colName
+                return $singleSheet.Name, $colName
+            }
+
+            $i++
+        }
+
+
+       # try {
+       #    if ($sheetCells.Item('1', 'BA').Value2 -eq 'Remaining Spend' -or $sheetCells.Item('1', 'BB').Value2 -eq 'Remaining Spend') {
+       #       return $singleSheet.Name
+       #     }
+       # } catch {
+       #     continue
+       # }
     }
 }
 
